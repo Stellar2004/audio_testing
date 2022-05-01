@@ -1,2 +1,2 @@
-# Unknown_Consequences
+# Maze Runner
 Our CS Project repository
