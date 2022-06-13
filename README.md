@@ -1,2 +1,2 @@
-# Maze Runner
+# Escape from Dark Forest
 Our CS Project repository
