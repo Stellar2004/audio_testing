@@ -1,2 +1,4 @@
 # Escape from Dark Forest
-Our CS Project repository
+CS Project repository
+
+By Advait, Spandan and Tejas
