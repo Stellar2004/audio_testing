@@ -1,3 +1,4 @@
+#The current static level map
 level_map = [
 '                            ',
 '                            ',
@@ -13,4 +14,6 @@ level_map = [
 
 tile_size = 64
 screen_width = 1200
+
+#Finding the screen height according to the level map and tile size
 screen_height = len(level_map) * tile_size
