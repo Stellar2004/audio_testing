@@ -3,7 +3,7 @@ import pygame
 from setup import import_assets
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos):
+    def __init__(self, pos, surface, jump_particles):
         super().__init__()
 
         #Importing the player graphics and setting the default image to idle
@@ -13,6 +13,13 @@ class Player(pygame.sprite.Sprite):
         self.image = self.animations['idle'][self.frame_index]
         self.rect = self.image.get_rect(topleft = pos)
         
+        #
+        self.import_run_particles()
+        self.dust_frame_index = 0
+        self.dust_animation_speed = 0.14
+        self.display_surface = surface
+        self.jump_particles = jump_particles
+
         #Creating the direction vector which will be changed to +-1 for movement
         self.direction = pygame.math.Vector2(0, 0)
 
@@ -50,6 +57,7 @@ class Player(pygame.sprite.Sprite):
 
         if keys[pygame.K_SPACE] and self.touching_ground:
             self.jump()
+            self.jump_particles(self.rect.midbottom)
 
 
     #We add the gravity constant to the direction vector and then add the direction vector y
@@ -114,9 +122,6 @@ class Player(pygame.sprite.Sprite):
         elif self.touching_ceiling:
             self.rect = self.image.get_rect(midtop = self.rect.midtop)
 
-        else:
-            self.rect = self.image.get_rect(center = self.rect.center)
-
 
     #This method will return the current run, jump, fall, idle status as a string which will
     #be used in animate method
@@ -131,7 +136,30 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.status = 'idle'
 
+
+    def import_run_particles(self):
+        self.run_particles = import_assets('graphics/player/particles/run')
+
+
+    def run_particle_animation(self):
+        if self.status == 'run' and self.touching_ground:
+            self.dust_frame_index += self.dust_animation_speed
+            if self.dust_frame_index >= len(self.run_particles):
+                self.dust_frame_index = 0
+
+            dust_particle = self.run_particles[int(self.dust_frame_index)]
+
+            if self.facing_right:
+                pos = self.rect.bottomleft - pygame.math.Vector2(6, 10)
+                self.display_surface.blit(dust_particle, pos)
+
+            else:
+                pos = self.rect.bottomright - pygame.math.Vector2(6, 10)
+                dust_particle_flipped = pygame.transform.flip(dust_particle, True, False)
+                self.display_surface.blit(dust_particle_flipped, pos)
+
     def update(self):
         self.input()
         self.movement_status()
         self.animate()
+        self.run_particle_animation()

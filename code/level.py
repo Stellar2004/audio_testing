@@ -3,6 +3,7 @@ import pygame
 from settings import tile_size, screen_width
 from tiles import Tile
 from player import Player
+from particles import ParticleEffects
 
 class Level():
     def __init__(self, surface, level_data):
@@ -11,6 +12,7 @@ class Level():
         self.camera_shifting = 0        #No need to be moving the camera at initialisation
         self.instant_x_pos = 0          #Setting the intantaneous x position to 0
 
+        self.dust_sprite = pygame.sprite.GroupSingle()
 
     def level_setup(self, layout):
         self.tiles = pygame.sprite.Group()
@@ -28,7 +30,7 @@ class Level():
                     self.tiles.add(tile_instance)
                 
                 if item == 'P':
-                    player_instance = Player((x, y))
+                    player_instance = Player((x, y), self.display_surface, self.create_jump_effects)
                     print((x, y))
                     self.player.add(player_instance)
 
@@ -52,6 +54,16 @@ class Level():
             self.camera_shifting = 0
             player_sprite.speed = 6
 
+    
+    def create_jump_effects(self, pos):
+        if self.player.sprite.facing_right:
+            pos -= pygame.math.Vector2(10, 5)
+        
+        else:
+            pos -= pygame.math.Vector2(-10, 5)
+
+        jump_particle_sprite = ParticleEffects(pos, 'jump')
+        self.dust_sprite.add(jump_particle_sprite)
 
     #To have proper collisions we resort to having the player sprite movement addition done here
     def horizontal_movement_collision(self):
@@ -117,6 +129,10 @@ class Level():
 
     def run(self):
 
+        self.dust_sprite.update(self.camera_shifting)
+        self.dust_sprite.draw(self.display_surface)
+
+        
         #Updating and drawing the tiles in the tile group created at initialisation
         
         #Passing the camera shifting variable which will cause the camera to move only if the
