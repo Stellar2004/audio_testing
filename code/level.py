@@ -13,6 +13,8 @@ class Level():
         self.instant_x_pos = 0          #Setting the intantaneous x position to 0
 
         self.dust_sprite = pygame.sprite.GroupSingle()
+        self.player_on_ground = False
+
 
     def level_setup(self, layout):
         self.tiles = pygame.sprite.Group()
@@ -30,8 +32,7 @@ class Level():
                     self.tiles.add(tile_instance)
                 
                 if item == 'P':
-                    player_instance = Player((x, y), self.display_surface, self.create_jump_effects)
-                    print((x, y))
+                    player_instance = Player((x, y), self.display_surface, self.create_jump_effects)    
                     self.player.add(player_instance)
 
 
@@ -64,6 +65,27 @@ class Level():
 
         jump_particle_sprite = ParticleEffects(pos, 'jump')
         self.dust_sprite.add(jump_particle_sprite)
+
+
+    def is_player_on_ground(self):
+        if self.player.sprite.touching_ground:
+            self.player_on_ground = True
+        
+        else:
+            self.player_on_ground = False
+
+    
+    def create_land_particles(self):
+        if not self.player_on_ground and self.player.sprite.touching_ground and not self.dust_sprite.sprites():
+            if self.player.sprite.facing_right:
+                offset = pygame.math.Vector2(10, 15)
+            
+            else:
+                offset = pygame.math.Vector2(-10, 15)
+
+            land_particle_sprite = ParticleEffects(self.player.sprite.rect.midbottom - offset, 'land')
+            self.dust_sprite.add(land_particle_sprite)
+
 
     #To have proper collisions we resort to having the player sprite movement addition done here
     def horizontal_movement_collision(self):
@@ -123,7 +145,7 @@ class Level():
             player_sprite.touching_ground = False
 
         #We set the touching ceiling status to False here if the direction vector y is +ve (gravity)
-        if player_sprite.touching_ceiling and player_sprite.direction.y > 0:
+        if player_sprite.touching_ceiling and player_sprite.direction.y > 0.1:
             player_sprite.touching_ceiling = False
 
 
@@ -145,5 +167,7 @@ class Level():
         #Updating the player in the player group single and drawing after checking for collisions
         self.player.update()
         self.horizontal_movement_collision()
+        self.is_player_on_ground()
         self.vertical_movement_collision()
+        self.create_land_particles()
         self.player.draw(self.display_surface)
