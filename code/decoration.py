@@ -11,7 +11,7 @@ class Sky:
 		self.middle = pygame.image.load('graphics/decoration/sky/sky_middle.png').convert()
 		self.horizon = horizon
 
-		# stretch 
+		#stretch 
 		self.top = pygame.transform.scale(self.top,(screen_width,tile_size))
 		self.bottom = pygame.transform.scale(self.bottom,(screen_width,tile_size))
 		self.middle = pygame.transform.scale(self.middle,(screen_width,tile_size))
@@ -39,10 +39,13 @@ class Sky:
 	def draw(self,surface):
 		for row in range(vertical_tile_number):
 			y = row * tile_size
+
 			if row < self.horizon:
 				surface.blit(self.top,(0,y))
+
 			elif row == self.horizon:
 				surface.blit(self.middle,(0,y))
+				
 			else:
 				surface.blit(self.bottom,(0,y))
 

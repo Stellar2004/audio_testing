@@ -7,15 +7,19 @@ from game_over import GameOver
 
 class Game:
     def __init__(self, screen):
+
+        #universal player attributes
         self.max_level = 0
         self.screen = screen
         self.max_hp = 100
         self.current_hp = 100
         self.coins = 0
 
+        #creating default overworld
         self.overworld = Overworld(0, self.max_level, self.screen, self.create_level)
         self.status = 'overworld'
 
+        #level ui
         self.ui = UI(self.screen)
 
     def create_level(self, current_level):
@@ -25,6 +29,7 @@ class Game:
     def create_overworld(self, current_level, new_max_level):
         if new_max_level > self.max_level:
             self.max_level = new_max_level
+
         self.overworld = Overworld(current_level, self.max_level, self.screen, self.create_level)
         self.status = 'overworld'
 
@@ -58,7 +63,7 @@ class Game:
             self.ui.display_coins(self.coins)
             self.game_over_check()
 
-# Pygame setup
+#pygame setup
 pygame.init()
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()

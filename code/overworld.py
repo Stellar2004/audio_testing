@@ -13,6 +13,7 @@ class Node(pygame.sprite.Sprite):
 
         if status == 'available':
             self.status = status
+
         else:
             self.status = status
 
@@ -21,13 +22,16 @@ class Node(pygame.sprite.Sprite):
 
     def animate(self):
         self.frame_index += 0.15
+
         if self.frame_index >= len(self.frames):
             self.frame_index = 0
+
         self.image = self.frames[int(self.frame_index)]
 
     def update(self):
         if self.status == 'available':
             self.animate()
+
         else:
             tinted_surf = self.image.copy()
             tinted_surf.fill('black', None, pygame.BLEND_RGB_MULT)
@@ -47,23 +51,28 @@ class Icon(pygame.sprite.Sprite):
 class Overworld:
     def __init__(self, start_level, max_level, surface, create_level):
         
+        #level setup
         self.display_surface = surface
         self.current_level = start_level
         self.max_level = max_level
         self.create_level = create_level
 
+        #player icon movement
         self.moving = False
         self.movement_direction = pygame.math.Vector2(0, 0)
         self.speed = 12
 
+        #setup nodes and background
         self.setup_nodes()
         self.setup_icon()
         self.sky = Sky(8, 'overworld')
 
+        #input timer
         self.start_time = pygame.time.get_ticks()
         self.accept_input = False
         self.timer_len = 300
 
+        #instructions font
         self.font = pygame.font.Font('graphics/ui/ARCADEPI.TTF', 25)
 
     def setup_nodes(self):
@@ -139,6 +148,8 @@ class Overworld:
         self.display_surface.blit(arrow_surf_1, arrow_rect_1)
 
     def run(self):
+
+        #update the icon and draw background and paths
         self.input_timer()
         self.input()
         self.update_icon()
@@ -146,8 +157,10 @@ class Overworld:
         self.draw_paths()
         self.display_instructions()
 
+        #nodes
         self.nodes.draw(self.display_surface)
         self.nodes.update()
 
+        #icon
         self.icon.draw(self.display_surface)
         self.icon.update()

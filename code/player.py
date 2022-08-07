@@ -83,6 +83,7 @@ class Player(pygame.sprite.Sprite):
 	def run_dust_animation(self):
 		if self.status == 'run' and self.on_ground:
 			self.dust_frame_index += self.dust_animation_speed
+
 			if self.dust_frame_index >= len(self.dust_run_particles):
 				self.dust_frame_index = 0
 
@@ -91,6 +92,7 @@ class Player(pygame.sprite.Sprite):
 			if self.facing_right:
 				pos = self.rect.bottomleft - pygame.math.Vector2(6,10)
 				self.display_surface.blit(dust_particle,pos)
+
 			else:
 				pos = self.rect.bottomright - pygame.math.Vector2(6,10)
 				flipped_dust_particle = pygame.transform.flip(dust_particle,True,False)
@@ -102,9 +104,11 @@ class Player(pygame.sprite.Sprite):
 		if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
 			self.direction.x = 1
 			self.facing_right = True
+
 		elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
 			self.direction.x = -1
 			self.facing_right = False
+
 		else:
 			self.direction.x = 0
 
@@ -115,11 +119,14 @@ class Player(pygame.sprite.Sprite):
 	def get_status(self):
 		if self.direction.y < 0:
 			self.status = 'jump'
+
 		elif self.direction.y > 1:
 			self.status = 'fall'
+
 		else:
 			if self.direction.x != 0:
 				self.status = 'run'
+
 			else:
 				self.status = 'idle'
 
@@ -139,6 +146,7 @@ class Player(pygame.sprite.Sprite):
 	def damage_timer(self):
 		if self.invincible:
 			current_time = pygame.time.get_ticks()
+
 			if current_time - self.damage_time >= self.invincible_period:
 				self.invincible = False
 
@@ -146,6 +154,7 @@ class Player(pygame.sprite.Sprite):
 		value = sin(pygame.time.get_ticks())
 		if value >= 0:
 			return 255
+			
 		else:
 			return 0
 

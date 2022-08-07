@@ -3,17 +3,19 @@ import pygame
 class UI:
     def __init__(self, surface):
         
+        #surface and font
         self.display_surface = surface
+        self.font = pygame.font.Font('graphics/ui/ARCADEPI.TTF', 30)
 
+        #hp bar characteristics
         self.hp_bar = pygame.image.load('graphics/ui/health_bar.png').convert_alpha()
         self.hp_bar_topleft = (54, 39)
         self.bar_max_width = 152
         self.bar_height = 4
 
+        #coin characteristics
         self.coin = pygame.image.load('graphics/ui/coin.png').convert_alpha()
         self.coin_rect = self.coin.get_rect(topleft = (50, 61))
-
-        self.font = pygame.font.Font('graphics/ui/ARCADEPI.TTF', 30)
 
     def display_hp(self, current_hp, full_hp):
         self.display_surface.blit(self.hp_bar, (20, 10))
