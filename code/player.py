@@ -1,173 +1,158 @@
-#Importing the necessary modules
-import pygame
-from setup import import_assets
+import pygame 
+from support import import_folder
+from math import sin
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surface, jump_particles):
-        super().__init__()
+	def __init__(self,pos,surface,create_jump_particles, update_hp):
+		super().__init__()
 
-        #Importing the player graphics and setting the default image to idle
-        self.import_graphics()
-        self.frame_index = 0
-        self.animation_speed = 0.15
-        self.image = self.animations['idle'][self.frame_index]
-        self.rect = self.image.get_rect(topleft = pos)
-        
-        #Importing the run particles and getting the jump particles method
-        self.import_run_particles()
-        self.dust_frame_index = 0
-        self.dust_animation_speed = 0.15
-        self.display_surface = surface
-        self.jump_particles = jump_particles
+		#player assets
+		self.import_character_assets()
+		self.frame_index = 0
+		self.animation_speed = 0.15
+		self.image = self.animations['idle'][self.frame_index]
+		self.rect = self.image.get_rect(topleft = pos)
+		
+		#dust particles 
+		self.import_dust_run_particles()
+		self.dust_frame_index = 0
+		self.dust_animation_speed = 0.15
+		self.display_surface = surface
+		self.create_jump_particles = create_jump_particles
 
-        #Creating the direction vector which will be changed to +-1 for movement
-        self.direction = pygame.math.Vector2(0, 0)
+		#player movement
+		self.direction = pygame.math.Vector2(0,0)
+		self.speed = 8
+		self.gravity = 0.8
+		self.jump_speed = -20
+		self.collision_rect = pygame.Rect(self.rect.topleft, (50, self.rect.height))
 
-        #The speed is a 'constant' that will be set to 0 whenever we don't eant the player to move
-        #regardless of input dictant that player should be moving
-        self.speed = 8
+		#player status
+		self.status = 'idle'
+		self.facing_right = True
+		self.on_ground = False
+		self.on_ceiling = False
+		self.on_left = False
+		self.on_right = False
 
-        #Rest of the player constants
-        self.gravity = 0.8
-        self.jump_velocity = -16
+		#player health
+		self.update_hp = update_hp
+		self.invincible = False
+		self.invincible_period = 600
+		self.damage_time = 0
 
-        #Player statuses
-        self.status = 'idle'
-        self.facing_right = True
-        self.touching_ground = False
-        self.touching_ceiling = False
-        self.touching_right = False
-        self.touching_left = False
+	def import_character_assets(self):
+		character_path = 'graphics/character/'
+		self.animations = {'idle':[],'run':[],'jump':[],'fall':[]}
 
+		for animation in self.animations.keys():
+			full_path = character_path + animation
+			self.animations[animation] = import_folder(full_path)
 
-    #A simple method to set the direction vector to +-1 or call the jump method depending on input key
-    def input(self):
-        keys = pygame.key.get_pressed()
+	def import_dust_run_particles(self):
+		self.dust_run_particles = import_folder('graphics/character/dust_particles/run')
 
-        if keys[pygame.K_RIGHT]:
-            self.direction.x = 1
-            self.facing_right = True
+	def animate(self):
+		animation = self.animations[self.status]
 
-        elif keys[pygame.K_LEFT]:
-            self.direction.x = -1
-            self.facing_right = False
+		#looping over frame index 
+		self.frame_index += self.animation_speed
+		if self.frame_index >= len(animation):
+			self.frame_index = 0
 
-        else:
-            self.direction.x = 0
+		image = animation[int(self.frame_index)]
 
-        if keys[pygame.K_SPACE] and self.touching_ground:
-            self.jump()
-            self.jump_particles(self.rect.midbottom)
+		if self.facing_right:
+			self.image = image
+			self.rect.bottomleft = self.collision_rect.bottomleft
 
+		else:
+			flipped_image = pygame.transform.flip(image,True,False)
+			self.image = flipped_image
+			self.rect.bottomright = self.collision_rect.bottomright
 
-    #We add the gravity constant to the direction vector and then add the direction vector y
-    #to the rectangle position of y, essentially making this a 2 step process
-    def apply_gravity(self):
-        self.direction.y += self.gravity
-        self.rect.y += self.direction.y
+		if self.invincible:
+			alpha = self.sin_wave()
+			self.image.set_alpha(alpha)
 
+		else:
+			self.image.set_alpha(255)
 
-    #We do a similar thing for jump method but instead we set the direction vector y to the
-    #jump veolcity constant
-    def jump(self):
-        self.direction.y = self.jump_velocity
+		self.rect = self.image.get_rect(midbottom = self.rect.midbottom)
 
+	def run_dust_animation(self):
+		if self.status == 'run' and self.on_ground:
+			self.dust_frame_index += self.dust_animation_speed
+			if self.dust_frame_index >= len(self.dust_run_particles):
+				self.dust_frame_index = 0
 
-    #Importing all of the player graphics and placing them in a animations dictionary
-    def import_graphics(self):
-        animation_path = 'graphics/player/'
-        self.animations = {'idle': [], 'run': [], 'jump': [], 'fall': []}
+			dust_particle = self.dust_run_particles[int(self.dust_frame_index)]
 
-        for animation_set in self.animations.keys():
-            full_path = animation_path + animation_set
-            self.animations[animation_set] = import_assets(full_path)
+			if self.facing_right:
+				pos = self.rect.bottomleft - pygame.math.Vector2(6,10)
+				self.display_surface.blit(dust_particle,pos)
+			else:
+				pos = self.rect.bottomright - pygame.math.Vector2(6,10)
+				flipped_dust_particle = pygame.transform.flip(dust_particle,True,False)
+				self.display_surface.blit(flipped_dust_particle,pos)
 
+	def get_input(self):
+		keys = pygame.key.get_pressed()
 
-    #Animating the player by increasing the frame index by animation speed
-    def animate(self):
-        animation_set = self.animations[self.status]
+		if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+			self.direction.x = 1
+			self.facing_right = True
+		elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
+			self.direction.x = -1
+			self.facing_right = False
+		else:
+			self.direction.x = 0
 
-        self.frame_index += self.animation_speed
-        if self.frame_index >= len(animation_set):
-            self.frame_index = 0
+		if keys[pygame.K_SPACE] and self.on_ground:
+			self.jump()
+			self.create_jump_particles(self.rect.midbottom)
 
-        image = animation_set[int(self.frame_index)]
-        if self.facing_right:
-            self.image = image
+	def get_status(self):
+		if self.direction.y < 0:
+			self.status = 'jump'
+		elif self.direction.y > 1:
+			self.status = 'fall'
+		else:
+			if self.direction.x != 0:
+				self.status = 'run'
+			else:
+				self.status = 'idle'
 
-        else:
+	def apply_gravity(self):
+		self.direction.y += self.gravity
+		self.collision_rect.y += self.direction.y
 
-            #The flip method in transform flips the image according to the boolean values given
-            #The first boolean is for x axis and the second is for y axis
-            self.image = pygame.transform.flip(image, True, False)
+	def jump(self):
+		self.direction.y = self.jump_speed
 
-        
-        #Setting the new rectangle according if the player is touching the ground or ceiling with
-        #combinations of touching the right or left wall
-        if self.touching_ground and self.touching_right:
-            self.rect = self.image.get_rect(bottomright = self.rect.bottomright)
-        
-        elif self.touching_ground and self.touching_left:
-            self.rect = self.image.get_rect(bottomleft = self.rect.bottomleft)
+	def damage(self):
+		if not self.invincible:
+			self.update_hp(-10)
+			self.invincible = True
+			self.damage_time = pygame.time.get_ticks()
 
-        elif self.touching_ground:
-            self.rect = self.image.get_rect(midbottom = self.rect.midbottom)
+	def damage_timer(self):
+		if self.invincible:
+			current_time = pygame.time.get_ticks()
+			if current_time - self.damage_time >= self.invincible_period:
+				self.invincible = False
 
-        elif self.touching_ceiling and self.touching_right:
-            self.rect = self.image.get_rect(topright = self.rect.topright)
+	def sin_wave(self):
+		value = sin(pygame.time.get_ticks())
+		if value >= 0:
+			return 255
+		else:
+			return 0
 
-        elif self.touching_ceiling and self.touching_left:
-            self.rect = self.image.get_rect(topleft = self.rect.topleft)
-
-        elif self.touching_ceiling:
-            self.rect = self.image.get_rect(midtop = self.rect.midtop)
-
-
-    #This method will return the current run, jump, fall, idle status as a string which will
-    #be used in animate method
-    def movement_status(self):
-        if self.direction.y < 0:
-            self.status = 'jump'
-
-        elif self.direction.y > 1:
-            self.status = 'fall'
-
-        else:
-            if self.direction.x != 0:
-                self.status = 'run'
-                
-            else:
-                self.status = 'idle'
-
-
-    #This method is used to import the run particle animations
-    def import_run_particles(self):
-        self.run_particles = import_assets('graphics/player/particles/run')
-
-
-    #A specific method for implementing the running particle animations which will place the
-    #particle sprites accordingly in the opposite direction to which the player is running
-    def run_particle_animation(self):
-        if self.status == 'run' and self.touching_ground:
-            self.dust_frame_index += self.dust_animation_speed
-            if self.dust_frame_index >= len(self.run_particles):
-                self.dust_frame_index = 0
-
-            dust_particle = self.run_particles[int(self.dust_frame_index)]
-
-            if self.facing_right:
-                pos = self.rect.bottomleft - pygame.math.Vector2(6, 10)
-                self.display_surface.blit(dust_particle, pos)
-
-            else:
-                pos = self.rect.bottomright - pygame.math.Vector2(6, 10)
-                dust_particle_flipped = pygame.transform.flip(dust_particle, True, False)
-                self.display_surface.blit(dust_particle_flipped, pos)
-
-    #Calling the input and movement status methods for getting the data and animate and run
-    #particle animation functions for animating the player
-    def update(self):
-        self.input()
-        self.movement_status()
-        self.animate()
-        self.run_particle_animation()
+	def update(self):
+		self.get_input()
+		self.get_status()
+		self.animate()
+		self.run_dust_animation()
+		self.damage_timer()
+		
